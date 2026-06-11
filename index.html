@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>E部 2026年5月 FBA库存可视化分析报告</title>
+  <style>
+    :root {
+      --ink:#172033; --muted:#64748b; --line:#e2e8f0; --bg:#f6f8fb;
+      --blue:#2563eb; --amber:#d97706; --red:#dc2626; --green:#16a34a;
+      --panel:#ffffff;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+    .page { max-width:1180px; margin:0 auto; padding:34px 28px 56px; }
+    .hero { background:linear-gradient(135deg,#0f1e3d,#1d4ed8 58%,#38bdf8); color:white; border-radius:22px; padding:34px 38px; box-shadow:0 20px 55px rgba(30,64,175,.24); }
+    .eyebrow { letter-spacing:.08em; text-transform:uppercase; opacity:.82; font-size:13px; }
+    h1 { margin:10px 0 12px; font-size:34px; line-height:1.2; }
+    .hero p { margin:0; opacity:.9; max-width:850px; line-height:1.8; }
+    .hero-meta { display:flex; gap:18px; flex-wrap:wrap; margin-top:22px; font-size:14px; }
+    .hero-meta span { background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); padding:8px 12px; border-radius:999px; }
+    .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:20px 0; }
+    .metric { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px; box-shadow:0 10px 26px rgba(15,23,42,.06); }
+    .metric-title { color:var(--muted); font-size:14px; }
+    .metric-value { font-size:28px; font-weight:800; margin:10px 0 8px; }
+    .metric-note { color:var(--muted); font-size:13px; }
+    .metric-blue { border-top:5px solid var(--blue); } .metric-amber { border-top:5px solid #f59e0b; }
+    .metric-red { border-top:5px solid var(--red); } .metric-slate { border-top:5px solid #64748b; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    section { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:18px; box-shadow:0 10px 26px rgba(15,23,42,.05); }
+    section.wide { grid-column:1 / -1; }
+    h2 { margin:0 0 16px; font-size:20px; }
+    .summary { display:grid; grid-template-columns:1.05fr .95fr; gap:20px; align-items:center; }
+    .donut { width:230px; height:230px; margin:auto; border-radius:50%; background:conic-gradient(#16a34a 0 64.95%, #f59e0b 0 92.14%, #f97316 0 99.64%, #ef4444 0 99.98%, #991b1b 0 100%); position:relative; }
+    .donut::after { content:"库龄结构"; position:absolute; inset:42px; background:#fff; border-radius:50%; display:grid; place-items:center; color:var(--muted); font-weight:700; box-shadow:inset 0 0 0 1px var(--line); }
+    .aging-item { margin:13px 0; }
+    .aging-top { display:flex; justify-content:space-between; font-size:14px; }
+    .aging-line { height:9px; background:#edf2f7; border-radius:999px; overflow:hidden; margin:7px 0; }
+    .aging-line i { display:block; height:100%; background:var(--c); border-radius:999px; }
+    .aging-meta { color:var(--muted); font-size:12px; }
+    .bar-row { display:grid; grid-template-columns:118px 1fr 112px; gap:12px; align-items:center; margin:12px 0; }
+    .bar-label strong { display:block; font-size:13px; } .bar-label span { color:var(--muted); font-size:12px; }
+    .bar-track { height:12px; background:#edf2f7; border-radius:999px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:999px; }
+    .bar-value { text-align:right; font-weight:700; font-size:13px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th,td { padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:#334155; background:#f8fafc; text-align:left; font-weight:800; }
+    tr:hover td { background:#fbfdff; }
+    .right { text-align:right; } .center { text-align:center; }
+    .callouts { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px; }
+    .callout { background:#f8fafc; border:1px solid var(--line); border-radius:14px; padding:15px; line-height:1.65; }
+    .callout strong { display:block; margin-bottom:5px; color:#0f172a; }
+    .foot { color:var(--muted); font-size:12px; text-align:center; margin-top:24px; }
+    @media print { body { background:#fff; } .page { max-width:none; padding:0; } section,.metric,.hero { box-shadow:none; } }
+    @media (max-width:900px) { .metrics,.grid,.summary,.callouts { grid-template-columns:1fr; } .bar-row { grid-template-columns:90px 1fr; } .bar-value { grid-column:2; text-align:left; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="eyebrow">Inventory Performance Review</div>
+      <h1>E部 2026年5月 FBA库存可视化分析报告</h1>
+      <p>本报告基于库存总额、库龄金额、不可售金额、负责人和 ASIN+市场维度，聚焦库存老化风险、团队责任分布与本月改善动作。</p>
+      <div class="hero-meta">
+        <span>报告时间：2026-05-31</span>
+        <span>ERP下载：2026-06-03 08:35</span>
+        <span>ASIN+市场：30,404</span>
+        <span>账号：390</span>
+      </div>
+    </header>
+
+    <div class="metrics">
+      <article class="metric metric-blue">
+        <div class="metric-title">库存总额</div>
+        <div class="metric-value">6,111,314.86</div>
+        <div class="metric-note">库存数量 593,993 件</div>
+      </article>
+    
+      <article class="metric metric-amber">
+        <div class="metric-title">90天以上金额</div>
+        <div class="metric-value">2,141,039.22</div>
+        <div class="metric-note">占库存总额 35.03%</div>
+      </article>
+    
+      <article class="metric metric-red">
+        <div class="metric-title">180天以上金额</div>
+        <div class="metric-value">479,382.78</div>
+        <div class="metric-note">占库存总额 7.84%</div>
+      </article>
+    
+      <article class="metric metric-slate">
+        <div class="metric-title">不可售金额</div>
+        <div class="metric-value">851.79</div>
+        <div class="metric-note">不可售数量 100 件</div>
+      </article>
+    </div>
+
+    <div class="grid">
+      <section class="wide">
+        <h2>一、核心判断</h2>
+        <div class="callouts">
+          <div class="callout"><strong>主要风险在 91-180 天</strong>该段库存金额 1,661,656.44，占库存总额 27.19%，是避免滚入 180 天以上的主战场。</div>
+          <div class="callout"><strong>180 天以上需专项跟进</strong>金额 479,382.78，占比 7.84%，应按负责人建立每周处理清单。</div>
+          <div class="callout"><strong>不可售金额较低</strong>不可售金额 851.79，但仍建议清理 Top SKU，避免无效占仓。</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>二、库龄结构</h2>
+        <div class="summary">
+          <div>
+        <div class="aging-item" style="--c:#16a34a">
+          <div class="aging-top"><span>0-90天</span><strong>64.95%</strong></div>
+          <div class="aging-line"><i style="width:64.95%"></i></div>
+          <div class="aging-meta">3,969,423.85 / 373,441 件</div>
+        </div>
+        
+        <div class="aging-item" style="--c:#f59e0b">
+          <div class="aging-top"><span>91-180天</span><strong>27.19%</strong></div>
+          <div class="aging-line"><i style="width:27.19%"></i></div>
+          <div class="aging-meta">1,661,656.44 / 166,514 件</div>
+        </div>
+        
+        <div class="aging-item" style="--c:#f97316">
+          <div class="aging-top"><span>181-270天</span><strong>7.50%</strong></div>
+          <div class="aging-line"><i style="width:7.50%"></i></div>
+          <div class="aging-meta">458,533.39 / 51,803 件</div>
+        </div>
+        
+        <div class="aging-item" style="--c:#ef4444">
+          <div class="aging-top"><span>271-365天</span><strong>0.34%</strong></div>
+          <div class="aging-line"><i style="width:0.34%"></i></div>
+          <div class="aging-meta">20,627.77 / 2,102 件</div>
+        </div>
+        
+        <div class="aging-item" style="--c:#991b1b">
+          <div class="aging-top"><span>365天以上</span><strong>0.00%</strong></div>
+          <div class="aging-line"><i style="width:0.00%"></i></div>
+          <div class="aging-meta">221.62 / 33 件</div>
+        </div>
+        </div>
+          <div class="donut"></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>三、小组库存金额排行</h2>
+        
+            <div class="bar-row">
+              <div class="bar-label"><strong>E7组</strong><span>90天+ 37.09%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:100.0%; background:#2563eb;"></div></div>
+              <div class="bar-value">1,889,090.41</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E3组</strong><span>90天+ 36.36%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:53.1%; background:#2563eb;"></div></div>
+              <div class="bar-value">1,002,286.28</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E2组</strong><span>90天+ 34.11%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:47.9%; background:#2563eb;"></div></div>
+              <div class="bar-value">903,943.01</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E5组</strong><span>90天+ 32.06%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:35.1%; background:#2563eb;"></div></div>
+              <div class="bar-value">662,567.27</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E4组</strong><span>90天+ 32.60%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:34.9%; background:#2563eb;"></div></div>
+              <div class="bar-value">658,609.30</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E1组</strong><span>90天+ 34.88%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:32.1%; background:#2563eb;"></div></div>
+              <div class="bar-value">607,168.58</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>E6组</strong><span>90天+ 33.19%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:20.5%; background:#2563eb;"></div></div>
+              <div class="bar-value">387,645.42</div>
+            </div>
+            
+            <div class="bar-row">
+              <div class="bar-label"><strong>亚马逊销售E部</strong><span>90天+ 100.00%</span></div>
+              <div class="bar-track"><div class="bar-fill" style="width:2.0%; background:#2563eb;"></div></div>
+              <div class="bar-value">4.60</div>
+            </div>
+            
+      </section>
+
+      <section>
+        <h2>四、站点库存分布</h2>
+        <table><thead><tr><th class='left'>站点</th><th class='right'>库存总额</th><th class='right'>90天以上金额</th><th class='right'>90天以上占比</th></tr></thead><tbody><tr><td class='left'>US</td><td class='right'>2,421,310.50</td><td class='right'>738,985.53</td><td class='right'>30.52%</td></tr><tr><td class='left'>GB</td><td class='right'>1,021,499.04</td><td class='right'>415,763.14</td><td class='right'>40.70%</td></tr><tr><td class='left'>DE</td><td class='right'>808,777.58</td><td class='right'>264,712.08</td><td class='right'>32.73%</td></tr><tr><td class='left'>CA</td><td class='right'>659,801.56</td><td class='right'>274,797.29</td><td class='right'>41.65%</td></tr><tr><td class='left'>MX</td><td class='right'>512,435.47</td><td class='right'>154,941.34</td><td class='right'>30.24%</td></tr><tr><td class='left'>FR</td><td class='right'>282,473.97</td><td class='right'>93,946.70</td><td class='right'>33.26%</td></tr><tr><td class='left'>AU</td><td class='right'>206,481.47</td><td class='right'>86,912.25</td><td class='right'>42.09%</td></tr><tr><td class='left'>ES</td><td class='right'>135,303.51</td><td class='right'>61,848.71</td><td class='right'>45.71%</td></tr><tr><td class='left'>AE</td><td class='right'>42,938.09</td><td class='right'>31,203.99</td><td class='right'>72.67%</td></tr><tr><td class='left'>IT</td><td class='right'>19,144.71</td><td class='right'>17,903.58</td><td class='right'>93.52%</td></tr></tbody></table>
+      </section>
+
+      <section>
+        <h2>五、负责人老化风险 Top10</h2>
+        <table><thead><tr><th class='center'>排名</th><th class='left'>小组</th><th class='left'>负责人</th><th class='right'>库存总额</th><th class='right'>90天以上金额</th><th class='right'>90天以上占比</th></tr></thead><tbody><tr><td class='center'>1</td><td class='left'>E7组</td><td class='left'>黄开璐</td><td class='right'>503,665.58</td><td class='right'>258,821.30</td><td class='right'>51.39%</td></tr><tr><td class='center'>2</td><td class='left'>E7组</td><td class='left'>陈沛芝</td><td class='right'>552,799.78</td><td class='right'>222,722.67</td><td class='right'>40.29%</td></tr><tr><td class='center'>3</td><td class='left'>E2组</td><td class='left'>薛海月</td><td class='right'>407,277.98</td><td class='right'>186,044.06</td><td class='right'>45.68%</td></tr><tr><td class='center'>4</td><td class='left'>E3组</td><td class='left'>黄子君</td><td class='right'>316,811.21</td><td class='right'>136,941.30</td><td class='right'>43.22%</td></tr><tr><td class='center'>5</td><td class='left'>E4组</td><td class='left'>冼金花</td><td class='right'>261,669.05</td><td class='right'>110,920.72</td><td class='right'>42.39%</td></tr><tr><td class='center'>6</td><td class='left'>E6组</td><td class='left'>陈慧欣</td><td class='right'>232,978.74</td><td class='right'>104,455.55</td><td class='right'>44.83%</td></tr><tr><td class='center'>7</td><td class='left'>E1组</td><td class='left'>吴漫怡</td><td class='right'>240,863.87</td><td class='right'>91,365.27</td><td class='right'>37.93%</td></tr><tr><td class='center'>8</td><td class='left'>E3组</td><td class='left'>杨小琪</td><td class='right'>214,290.70</td><td class='right'>91,320.60</td><td class='right'>42.62%</td></tr><tr><td class='center'>9</td><td class='left'>E5组</td><td class='left'>何静</td><td class='right'>231,556.10</td><td class='right'>87,601.37</td><td class='right'>37.83%</td></tr><tr><td class='center'>10</td><td class='left'>E7组</td><td class='left'>胡建霖</td><td class='right'>273,538.54</td><td class='right'>80,568.84</td><td class='right'>29.45%</td></tr></tbody></table>
+      </section>
+
+      <section class="wide">
+        <h2>六、小组汇总</h2>
+        <table><thead><tr><th class='left'>小组</th><th class='right'>库存总额</th><th class='right'>90天以上金额</th><th class='right'>90天以上占比</th><th class='right'>180天以上金额</th><th class='right'>不可售金额</th></tr></thead><tbody><tr><td class='left'>E7组</td><td class='right'>1,889,090.41</td><td class='right'>700,738.80</td><td class='right'>37.09%</td><td class='right'>141,466.94</td><td class='right'>606.53</td></tr><tr><td class='left'>E3组</td><td class='right'>1,002,286.28</td><td class='right'>364,412.61</td><td class='right'>36.36%</td><td class='right'>101,619.96</td><td class='right'>79.40</td></tr><tr><td class='left'>E2组</td><td class='right'>903,943.01</td><td class='right'>308,335.48</td><td class='right'>34.11%</td><td class='right'>70,314.90</td><td class='right'>37.62</td></tr><tr><td class='left'>E5组</td><td class='right'>662,567.27</td><td class='right'>212,401.01</td><td class='right'>32.06%</td><td class='right'>35,694.25</td><td class='right'>19.80</td></tr><tr><td class='left'>E4组</td><td class='right'>658,609.30</td><td class='right'>214,689.78</td><td class='right'>32.60%</td><td class='right'>47,861.19</td><td class='right'>87.78</td></tr><tr><td class='left'>E1组</td><td class='right'>607,168.58</td><td class='right'>211,801.36</td><td class='right'>34.88%</td><td class='right'>37,804.84</td><td class='right'>20.66</td></tr><tr><td class='left'>E6组</td><td class='right'>387,645.42</td><td class='right'>128,655.59</td><td class='right'>33.19%</td><td class='right'>44,616.10</td><td class='right'>0.00</td></tr><tr><td class='left'>亚马逊销售E部</td><td class='right'>4.60</td><td class='right'>4.60</td><td class='right'>100.00%</td><td class='right'>4.60</td><td class='right'>0.00</td></tr></tbody></table>
+      </section>
+
+      <section class="wide">
+        <h2>七、90天以上金额重点 ASIN+市场</h2>
+        <table><thead><tr><th class='center'>排名</th><th class='left'>ASIN+市场</th><th class='left'>站点</th><th class='left'>产品中文名</th><th class='left'>负责人</th><th class='left'>小组</th><th class='right'>90天以上金额</th><th class='right'>库存总额</th></tr></thead><tbody><tr><td class='center'>1</td><td class='left'>B092YN8FL6GB</td><td class='left'>GB</td><td class='left'>iplusmile   克鲁克斯辐射计光压风车热辐射计</td><td class='left'>黄红丽</td><td class='left'>E2组</td><td class='right'>5,096.00</td><td class='right'>5,096.00</td></tr><tr><td class='center'>2</td><td class='left'>B0BMKXZCKTMX</td><td class='left'>MX</td><td class='left'>圣诞节胡桃夹子木偶白胚胡桃兵（随机款）12pcs</td><td class='left'>袁优梅</td><td class='left'>E7组</td><td class='right'>4,898.40</td><td class='right'>4,898.40</td></tr><tr><td class='center'>3</td><td class='left'>B07F6HN7PQDE</td><td class='left'>DE</td><td class='left'>BESTOYARD  绣花船长帽  白色</td><td class='left'>张佳妮</td><td class='left'>E7组</td><td class='right'>4,835.35</td><td class='right'>5,726.30</td></tr><tr><td class='center'>4</td><td class='left'>B0CGV85Y3XCA</td><td class='left'>CA</td><td class='left'>透明软胶三轴承双轮空竹 用于老人儿童健身锻炼（浅蓝色）</td><td class='left'>肖雄锋</td><td class='left'>E5组</td><td class='right'>4,792.50</td><td class='right'>4,863.50</td></tr><tr><td class='center'>5</td><td class='left'>B0D9YD7KCLGB</td><td class='left'>GB</td><td class='left'>玩具车模型收纳盒亚克力儿童合金小汽车多层分格透明置物架展...</td><td class='left'>黄开璐</td><td class='left'>E7组</td><td class='right'>4,716.00</td><td class='right'>4,752.00</td></tr><tr><td class='center'>6</td><td class='left'>B0FWK83CG2CA</td><td class='left'>CA</td><td class='left'>DIY奶油壳相框配件小号娃娃屋装饰配件（金色  15个/...</td><td class='left'>罗伟玲</td><td class='left'>E4组</td><td class='right'>4,620.00</td><td class='right'>5,320.70</td></tr><tr><td class='center'>7</td><td class='left'>B0CJ8CBQPSUS</td><td class='left'>US</td><td class='left'>单肩手提书包PU制服包男女通勤防水电脑包（黑色）</td><td class='left'>张佳妮</td><td class='left'>E7组</td><td class='right'>4,512.00</td><td class='right'>4,728.00</td></tr><tr><td class='center'>8</td><td class='left'>B081ZJTYDGDE</td><td class='left'>DE</td><td class='left'>情人节爱心发光胸针 红色 20个/套（配件款式随机）</td><td class='left'>陈沛芝</td><td class='left'>E7组</td><td class='right'>3,952.50</td><td class='right'>17,127.50</td></tr><tr><td class='center'>9</td><td class='left'>B0DWHN6XXHCA</td><td class='left'>CA</td><td class='left'>汽车手指灯手势灯车载多功能警示提示灯防追尾灯交互手掌灯（...</td><td class='left'>杨小琪</td><td class='left'>E3组</td><td class='right'>3,700.00</td><td class='right'>3,700.00</td></tr><tr><td class='center'>10</td><td class='left'>B0D3VCFLQPMX</td><td class='left'>MX</td><td class='left'>黑绒手表珠宝首饰收纳卷包 便携外出参展卷包旅行收纳袋</td><td class='left'>黄子君</td><td class='left'>E3组</td><td class='right'>3,672.00</td><td class='right'>3,696.00</td></tr><tr><td class='center'>11</td><td class='left'>B0DKB6MG59US</td><td class='left'>US</td><td class='left'>小型休闲瀑布可用于办公室 室内和室外便携式喷泉 （3步小...</td><td class='left'>陈沛芝</td><td class='left'>E7组</td><td class='right'>3,564.00</td><td class='right'>3,586.00</td></tr><tr><td class='center'>12</td><td class='left'>B0CWJQW55KES</td><td class='left'>ES</td><td class='left'>手摇发电太阳能手手电筒收音机</td><td class='left'>林依婷</td><td class='left'>E2组</td><td class='right'>3,472.00</td><td class='right'>3,472.00</td></tr></tbody></table>
+      </section>
+
+      <section class="wide">
+        <h2>八、不可售金额重点 ASIN+市场</h2>
+        <table><thead><tr><th class='center'>排名</th><th class='left'>ASIN+市场</th><th class='left'>站点</th><th class='left'>产品中文名</th><th class='left'>负责人</th><th class='right'>不可售金额</th><th class='right'>不可售占比</th></tr></thead><tbody><tr><td class='center'>1</td><td class='left'>B0CQH18BCVUS</td><td class='left'>US</td><td class='left'>底座支架适用于roku电视电视支架32 40 4...</td><td class='left'>张佳妮</td><td class='right'>192.75</td><td class='right'>16.67%</td></tr><tr><td class='center'>2</td><td class='left'>B0CFJ2KY1ZUS</td><td class='left'>US</td><td class='left'>迷你小帽子 白色圆顶水手帽 头箍搞怪趣味节日派对...</td><td class='left'>胡建霖</td><td class='right'>154.50</td><td class='right'>28.41%</td></tr><tr><td class='center'>3</td><td class='left'>B0CQ55TRDLUS</td><td class='left'>US</td><td class='left'>可爱水豚公仔拍拍圈</td><td class='left'>胡建霖</td><td class='right'>140.00</td><td class='right'>13.99%</td></tr><tr><td class='center'>4</td><td class='left'>B0DB57BPY6US</td><td class='left'>US</td><td class='left'>可注水警示柱沙弹力柱隔离桩道路可移动防撞柱</td><td class='left'>杨小琪</td><td class='right'>60.00</td><td class='right'>11.90%</td></tr><tr><td class='center'>5</td><td class='left'>B0DQJDWDHSCA</td><td class='left'>CA</td><td class='left'>十字绣网格片网格板套装（小心型7.5cm+8x8...</td><td class='left'>罗伟玲</td><td class='right'>45.00</td><td class='right'>37.50%</td></tr><tr><td class='center'>6</td><td class='left'>B0CVM9W67PUS</td><td class='left'>US</td><td class='left'>环保PVC店铺墙面装饰卡通狮子款挂钟摆锤钟挂饰</td><td class='left'>胡建霖</td><td class='right'>38.00</td><td class='right'>9.09%</td></tr><tr><td class='center'>7</td><td class='left'>B0FF1LBLF8GB</td><td class='left'>GB</td><td class='left'>2025-2028年教室装饰翻页日历公告板卡片套...</td><td class='left'>薛海月</td><td class='right'>37.62</td><td class='right'>33.33%</td></tr><tr><td class='center'>8</td><td class='left'>B0DL9PD44NUS</td><td class='left'>US</td><td class='left'>304不锈钢电饭锅内胆 加厚复底通用内胆替换配件...</td><td class='left'>胡建霖</td><td class='right'>24.00</td><td class='right'>4.00%</td></tr></tbody></table>
+      </section>
+
+      <section class="wide">
+        <h2>九、改善动作建议</h2>
+        <div class="callouts">
+          <div class="callout"><strong>91-180天：促销消化</strong>优先处理金额高、在线正常、有转化基础的 SKU，通过 coupon、降价、广告和站外促销降低滚龄。</div>
+          <div class="callout"><strong>180天以上：强制闭环</strong>每个 SKU 明确处理动作、负责人和截止日期；连续两周无改善则升级为移除/弃置评估。</div>
+          <div class="callout"><strong>补货端：设置刹车</strong>90天以上占比高的账号暂停低动销补货，新品小批量测试，季节品设置最晚入仓时间。</div>
+        </div>
+      </section>
+    </div>
+
+    <p class="foot">口径说明：库存总额 6,111,314.86；库龄金额合计 6,110,463.07；两者差额 851.79 与不可售金额一致，库龄结构主要反映可售/已分库龄库存。</p>
+  </main>
+</body>
+</html>
